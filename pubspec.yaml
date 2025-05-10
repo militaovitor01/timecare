@@ -39,6 +39,9 @@ dependencies:
   stylish_bottom_bar: ^1.1.1
   sqflite: ^2.0.0+4
   sqflite_common_ffi: ^2.3.4
+  firebase_core: ^2.32.0
+  firebase_database: ^10.4.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
