@@ -2,13 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
-import 'package:timecare/screens/StatisticsScreen.dart';
-import 'package:timecare/screens/Medicine_screen.dart';
+import 'package:timecare/screens/analysis_screen.dart';
 import 'package:timecare/screens/ListMedicinesScreen.dart';
 import 'package:timecare/screens/ProfileScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:timecare/firebase_options.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:timecare/screens/Medicine_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const HomeScreen(),
-        '/profile': (context) => const ProfileScreen(),
+        
       },
     );
   }
@@ -69,9 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         children: const [
-          ListMedicinesScreen(),
-          StatisticsScreen(),
-          ProfileScreen(),
+          MedicineScreen(),
+          AnalysisScreen(),
         ],
       ),
       bottomNavigationBar: StylishBottomBar(
@@ -107,3 +105,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
