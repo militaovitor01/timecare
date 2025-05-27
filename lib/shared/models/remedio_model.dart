@@ -1,32 +1,53 @@
 class Remedio {
   int? id;
-  String nome;
-  String tipo;
-  String dosagem;
-  int? frequencia;
-  String? horario;
+  final String nome;
+  final String tipo;
+  final String dosagem;
+  final String? instrucoes;
+  final int? frequencia;
+  final String? horario;
 
   Remedio({
     this.id,
     required this.nome,
     required this.tipo,
     required this.dosagem,
-    required this.frequencia,
-    required this.horario,
+    this.instrucoes,
+    this.frequencia,
+    this.horario,
   });
 
   factory Remedio.fromSQLite(Map<String, dynamic> map) {
-    return Remedio(
-      id: map['id'] as int?,
-      nome: map['nome'] as String,
-      tipo: map['tipo'] as String,
-      dosagem: map['dosagem'] as String,
-      frequencia:
-          map['frequencia'] != null
-              ? int.tryParse(map['frequencia'].toString())
-              : null,
-      horario: map['horario']?.toString(),
-    );
+    try {
+      return Remedio(
+        id: map['id'] as int?,
+        nome: map['nome'] as String? ?? '',
+        tipo: map['tipo'] as String? ?? '',
+        dosagem: map['dosagem'] as String? ?? '',
+        instrucoes: map['instrucoes'] as String?,
+        frequencia:
+            map['frequencia'] != null
+                ? int.tryParse(map['frequencia'].toString())
+                : null,
+        horario: map['horario'] as String?,
+      );
+    } catch (e) {
+      print('Erro ao converter mapa para Remedio: $map');
+      print('Erro: $e');
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'tipo': tipo,
+      'dosagem': dosagem,
+      'instrucoes': instrucoes,
+      'frequencia': frequencia,
+      'horario': horario,
+    };
   }
 
   static List<Remedio> fromSQLiteList(List<Map<String, dynamic>> listMap) {

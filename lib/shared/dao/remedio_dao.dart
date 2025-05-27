@@ -12,10 +12,22 @@ class RemedioDao {
 
   Future<Remedio> adicionar(Remedio remedio) async {
     try {
+      if (remedio.nome.isEmpty ||
+          remedio.tipo.isEmpty ||
+          remedio.dosagem.isEmpty) {
+        throw Exception('Nome, tipo e dosagem são campos obrigatórios');
+      }
+
       Database db = await _getDatabase();
-      int idRetornado = await db.rawInsert(
-        ConnectionSQL.adicionarRemedio(remedio),
-      );
+      int idRetornado = await db
+          .rawInsert(ConnectionSQL.adicionarRemedio(remedio), [
+            remedio.nome,
+            remedio.tipo,
+            remedio.dosagem,
+            remedio.instrucoes,
+            remedio.frequencia,
+            remedio.horario,
+          ]);
       remedio.id = idRetornado;
       return remedio;
     } catch (error) {
@@ -26,10 +38,26 @@ class RemedioDao {
 
   Future<bool> atualizar(Remedio remedio) async {
     try {
+      if (remedio.id == null) {
+        throw Exception('ID do remédio é obrigatório para atualização');
+      }
+      if (remedio.nome.isEmpty ||
+          remedio.tipo.isEmpty ||
+          remedio.dosagem.isEmpty) {
+        throw Exception('Nome, tipo e dosagem são campos obrigatórios');
+      }
+
       Database db = await _getDatabase();
-      int linhasAfetadas = await db.rawUpdate(
-        ConnectionSQL.atualizarRemedio(remedio),
-      );
+      int linhasAfetadas = await db
+          .rawUpdate(ConnectionSQL.atualizarRemedio(remedio), [
+            remedio.nome,
+            remedio.tipo,
+            remedio.dosagem,
+            remedio.instrucoes,
+            remedio.frequencia,
+            remedio.horario,
+            remedio.id,
+          ]);
       return linhasAfetadas > 0;
     } catch (error) {
       print('Erro ao atualizar remédio: $error');
@@ -44,12 +72,20 @@ class RemedioDao {
         ConnectionSQL.selecionarTodosOsRemedios(),
       );
 
-      for (var linha in linhas) {
-        print('Linha do banco de dados: $linha');
+      if (linhas.isEmpty) {
+        print('Nenhum remédio encontrado no banco de dados');
+        return [];
       }
 
-      List<Remedio> remedios =
-          linhas.map((linha) => Remedio.fromSQLite(linha)).toList();
+      List<Remedio> remedios = [];
+      for (var linha in linhas) {
+        try {
+          remedios.add(Remedio.fromSQLite(linha));
+        } catch (e) {
+          print('Erro ao converter linha do banco: $linha');
+          print('Erro: $e');
+        }
+      }
       return remedios;
     } catch (error) {
       print('Erro ao selecionar remédios: $error');
@@ -59,9 +95,14 @@ class RemedioDao {
 
   Future<bool> deletar(Remedio remedio) async {
     try {
+      if (remedio.id == null) {
+        throw Exception('ID do remédio é obrigatório para exclusão');
+      }
+
       Database db = await _getDatabase();
       int linhasAfetadas = await db.rawDelete(
         ConnectionSQL.deletarRemedio(remedio),
+        [remedio.id],
       );
       return linhasAfetadas > 0;
     } catch (error) {
@@ -70,38 +111,36 @@ class RemedioDao {
     }
   }
 
-  // Função para deletar linhas com frequência incorreta
-  Future<bool> deletarPorFrequenciaIncorreta() async {
-    try {
-      Database db = await _getDatabase();
-      int linhasAfetadas = await db.delete(
-        'remedios',
-        where:
-            "typeof(frequencia) = 'text'", // Filtra onde 'frequencia' é uma string
-      );
-
-      print('$linhasAfetadas linhas deletadas com frequência incorreta.');
-      return linhasAfetadas > 0;
-    } catch (error) {
-      print('Erro ao deletar remédios com frequência incorreta: $error');
-      throw Exception(
-        'Erro ao deletar remédios com frequência incorreta: $error',
-      );
-    }
-  }
-
   Future<void> deletarFrequenciaInvalida() async {
     try {
       Database db = await _getDatabase();
-      int linhasAfetadas = await db.rawDelete(
-        "DELETE FROM remedios WHERE typeof(frequencia) != 'integer'",
-      );
-      print('$linhasAfetadas linhas deletadas com frequência incorreta.');
+
+      // Lista de condições para dados inválidos
+      final conditions = [
+        "typeof(frequencia) != 'integer'", // Frequência não é número
+        "nome IS NULL OR nome = ''", // Nome vazio
+        "tipo IS NULL OR tipo = ''", // Tipo vazio
+        "dosagem IS NULL OR dosagem = ''", // Dosagem vazia
+        "frequencia < 0", // Frequência negativa
+        "horario IS NOT NULL AND horario != '' AND horario NOT LIKE '__:__'", // Horário inválido
+      ];
+
+      // Constrói a query com todas as condições
+      final whereClause = conditions.join(' OR ');
+      final query = "DELETE FROM remedios WHERE $whereClause";
+
+      print('Executando limpeza com query: $query');
+
+      int linhasAfetadas = await db.rawDelete(query);
+      print('$linhasAfetadas linhas deletadas com dados inválidos.');
+
+      if (linhasAfetadas > 0) {
+        // Limpa o cache do banco de dados
+        await db.execute('VACUUM');
+      }
     } catch (error) {
-      print('Erro ao deletar remédios com frequência incorreta: $error');
-      throw Exception(
-        'Erro ao deletar remédios com frequência incorreta: $error',
-      );
+      print('Erro ao limpar dados inválidos: $error');
+      throw Exception('Erro ao limpar dados inválidos: $error');
     }
   }
 }

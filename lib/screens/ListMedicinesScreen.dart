@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:timecare/shared/dao/remedio_dao.dart';
 import 'package:timecare/shared/models/remedio_model.dart';
+import 'package:timecare/shared/dao/usuario_dao.dart';
+import 'package:timecare/shared/models/usuario_model.dart';
 import 'editMedicineScreen.dart';
 
 class ListMedicinesScreen extends StatefulWidget {
@@ -14,23 +16,27 @@ class ListMedicinesScreen extends StatefulWidget {
 
 class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
   final RemedioDao _remedioDao = RemedioDao();
+  final UsuarioDao _usuarioDao = UsuarioDao();
   List<Remedio> _remedios = [];
+  Usuario? _usuario;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _carregarRemedios();
+    _carregarDados();
   }
 
-  Future<void> _carregarRemedios() async {
+  Future<void> _carregarDados() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
+      final usuarios = await _usuarioDao.selecionarTodos();
       final remedios = await _remedioDao.selecionarTodos();
       setState(() {
+        _usuario = usuarios.isNotEmpty ? usuarios.first : null;
         _remedios = remedios;
         _isLoading = false;
       });
@@ -38,16 +44,17 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
       setState(() {
         _isLoading = false;
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar remédios: $e')));
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
     }
   }
 
   Future<void> _excluirRemedio(Remedio remedio) async {
     try {
       await _remedioDao.deletar(remedio);
-      await _carregarRemedios();
+      await _carregarDados();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Remédio excluído com sucesso!')),
       );
@@ -65,40 +72,62 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 16, top: 16),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16, top: 16),
           child: CircleAvatar(
             backgroundColor: Colors.black12,
-            child: Icon(Icons.person_outline, color: Colors.black87),
+            backgroundImage:
+                _usuario?.foto != null
+                    ? NetworkImage(_usuario!.foto!)
+                    : const AssetImage('assets/images/profile_placeholder.png')
+                        as ImageProvider,
+            child:
+                _usuario?.foto == null
+                    ? const Icon(Icons.person_outline, color: Colors.black87)
+                    : null,
           ),
         ),
-        title: const Padding(
-          padding: EdgeInsets.only(top: 16),
+        title: Padding(
+          padding: const EdgeInsets.only(top: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Usuário Aleatório',
-                style: TextStyle(
+                _usuario?.nome ?? 'Usuário',
+                style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                'Cupertino - Formula, 25',
-                style: TextStyle(color: Colors.black54, fontSize: 12),
+                _usuario?.idade != null
+                    ? '${_usuario!.idade} anos'
+                    : 'Idade não informada',
+                style: const TextStyle(color: Colors.black54, fontSize: 12),
               ),
             ],
           ),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16, top: 16),
-            child: CircleAvatar(
-              backgroundColor: Color(0xFFFFA7A7),
-              child: Icon(Icons.person, color: Colors.white),
+            padding: const EdgeInsets.only(right: 16, top: 16),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+              child: CircleAvatar(
+                backgroundColor: const Color(0xFFFFA7A7),
+                backgroundImage:
+                    _usuario?.foto != null
+                        ? NetworkImage(_usuario!.foto!)
+                        : null,
+                child:
+                    _usuario?.foto == null
+                        ? const Icon(Icons.person, color: Colors.white)
+                        : null,
+              ),
             ),
           ),
         ],
@@ -124,19 +153,58 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                         color: Colors.redAccent,
                       ),
                       onPressed: () async {
+                        // Mostra diálogo de confirmação
+                        final confirmar = await showDialog<bool>(
+                          context: context,
+                          builder:
+                              (ctx) => AlertDialog(
+                                title: const Text('Limpar dados inválidos'),
+                                content: const Text(
+                                  'Isso irá remover todos os remédios com dados inválidos, como:\n\n'
+                                  '• Nome, tipo ou dosagem vazios\n'
+                                  '• Frequência inválida\n'
+                                  '• Horário em formato incorreto\n\n'
+                                  'Deseja continuar?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.of(ctx).pop(false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.of(ctx).pop(true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Limpar'),
+                                  ),
+                                ],
+                              ),
+                        );
+
+                        if (confirmar != true) return;
+
                         try {
                           await _remedioDao.deletarFrequenciaInvalida();
-                          await _carregarRemedios();
+                          await _carregarDados();
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
                                 'Dados inválidos removidos com sucesso!',
                               ),
+                              backgroundColor: Colors.green,
                             ),
                           );
                         } catch (e) {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Erro ao limpar dados: $e')),
+                            SnackBar(
+                              content: Text('Erro ao limpar dados: $e'),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       },
@@ -144,7 +212,7 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.refresh, color: Colors.blueAccent),
-                      onPressed: _carregarRemedios,
+                      onPressed: _carregarDados,
                       tooltip: 'Atualizar lista',
                     ),
                   ],
@@ -252,7 +320,7 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                                         );
 
                                         if (result != null) {
-                                          await _carregarRemedios();
+                                          await _carregarDados();
                                         }
                                       },
                                     ),
@@ -318,7 +386,7 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
           );
 
           if (result != null) {
-            await _carregarRemedios();
+            await _carregarDados();
           }
         },
       ),

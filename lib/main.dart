@@ -12,9 +12,7 @@ import 'package:flutter/cupertino.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -27,7 +25,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Relatório Diário',
       theme: ThemeData(fontFamily: GoogleFonts.poppins().fontFamily),
-      home: const HomeScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+      },
     );
   }
 }
@@ -67,9 +69,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         children: const [
-          MedicineScreen(),
+          ListMedicinesScreen(),
           StatisticsScreen(),
-          ProfileScreen(), 
+          ProfileScreen(),
         ],
       ),
       bottomNavigationBar: StylishBottomBar(
