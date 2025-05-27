@@ -426,7 +426,107 @@ class _MedicineScreenState extends State<MedicineScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
-      appBar: AppBar(title: const Text('Lembretes de Medicamentos')),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey4,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.person,
+                      color: CupertinoColors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '13',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        '25 anos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemRed.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.person_fill,
+                      color: CupertinoColors.systemRed,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Meus Remédios',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          CupertinoIcons.delete,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                        onPressed: () {
+                          // TODO: Implement delete all functionality
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          CupertinoIcons.arrow_counterclockwise,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                        onPressed: () {
+                          // TODO: Implement refresh functionality
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        toolbarHeight: 120, // Adjust height to accommodate the custom title
+      ),
       body: StreamBuilder<DatabaseEvent>(
         stream: _databaseRef.onValue,
         builder: (context, snapshot) {
@@ -459,31 +559,7 @@ class _MedicineScreenState extends State<MedicineScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Card(
-                    margin: EdgeInsets.zero,
-                    color: Colors.transparent,
-                    elevation: 0,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const SizedBox(width: 40),
-                      title: Center(
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: CupertinoColors.systemBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.plus,
-                            color: CupertinoColors.systemBlue,
-                          ),
-                        ),
-                      ),
-                      trailing: const SizedBox(width: 40),
-                      onTap: _showAddMedicineDialog,
-                    ),
-                  ),
+                  // Removed the add button from here
                 ],
               ),
             );
@@ -516,180 +592,174 @@ class _MedicineScreenState extends State<MedicineScreen> {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: medicinesList.length + 1,
+            itemCount: medicinesList.length, // Removed the +1
             itemBuilder: (context, index) {
-              if (index == medicinesList.length) {
-                return Card(
-                  margin: EdgeInsets.zero,
-                  color: Colors.transparent,
-                  elevation: 0,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const SizedBox(width: 40),
-                    title: Center(
-                      child: Container(
+              final medicine = medicinesList[index];
+              // Use a custom Card structure instead of ListTile for better control
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                elevation: 2, // Add some elevation for depth
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12), // Rounded corners
+                ),
+                color: Colors.white, // Set the background color to white
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left side icon
+                      Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color:
+                              medicine['status'] == 'on-time'
+                                  ? CupertinoColors.systemGreen.withOpacity(0.1)
+                                  : CupertinoColors.systemRed.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(
+                            20,
+                          ), // Make it circular
                         ),
-                        child: const Icon(
-                          CupertinoIcons.plus,
-                          color: CupertinoColors.systemBlue,
+                        child: Icon(
+                          medicine['status'] == 'on-time'
+                              ? CupertinoIcons.checkmark_circle_fill
+                              : CupertinoIcons
+                                  .circle_fill, // Use circle_fill for red dot
+                          color:
+                              medicine['status'] == 'on-time'
+                                  ? CupertinoColors.systemGreen
+                                  : CupertinoColors.systemRed,
+                          size: 24.0, // Adjust icon size
                         ),
                       ),
-                    ),
-                    trailing: const SizedBox(width: 40),
-                    onTap: _showAddMedicineDialog,
-                  ),
-                );
-              }
-
-              final medicine = medicinesList[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color:
-                          medicine['status'] == 'on-time'
-                              ? CupertinoColors.systemGreen.withOpacity(0.1)
-                              : CupertinoColors.systemRed.withOpacity(
-                                0.1,
-                              ), // Assuming 'on-time' is the success status
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      medicine['status'] == 'on-time'
-                          ? CupertinoIcons.checkmark_circle_fill
-                          : CupertinoIcons
-                              .circle, // Assuming 'on-time' is the success status
-                      color:
-                          medicine['status'] == 'on-time'
-                              ? CupertinoColors.systemGreen
-                              : CupertinoColors.systemRed,
-                      size: 30.0, // Explicitly set icon size
-                    ),
-                  ),
-                  title: Text(
-                    medicine['name'],
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if ((medicine['scheduled_time'] as String).isNotEmpty)
-                        Row(
+                      const SizedBox(width: 16),
+                      // Middle content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              CupertinoIcons.time,
-                              size: 14,
-                              color: CupertinoColors.systemGrey,
-                            ),
-                            const SizedBox(width: 4),
                             Text(
-                              _formatTimeOfDay(
-                                _parseTimeOfDayFromIso8601(
-                                  medicine['scheduled_time'],
-                                ),
-                              ), // Display formatted time
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: CupertinoColors.systemGrey,
+                              medicine['name'],
+                              style: const TextStyle(
+                                fontSize: 18, // Slightly larger font for name
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            // Displaying "Tipo" (assuming it's the 'instructions' field or similar,
+                            // or maybe it's a hardcoded value in the image?)
+                            // Based on OCR, "Tipo" has values like 321 and 132.
+                            // Let's use the 'instructions' field for "Tipo" for now, as 'dosage' is
+                            // already displayed as "Dosagem". If 'instructions' is empty, maybe
+                            // display 'dosage' under "Tipo"? Or add a new field to the data?
+                            // For now, let's assume 'instructions' is "Tipo".
+                            if ((medicine['instructions'] as String).isNotEmpty)
+                              Text(
+                                'Tipo: ${medicine['instructions']}', // Assuming 'instructions' is 'Tipo'
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            const SizedBox(height: 4),
+                            if ((medicine['scheduled_time'] as String)
+                                .isNotEmpty)
+                              Text(
+                                'Horário: ${_formatTimeOfDay(_parseTimeOfDayFromIso8601(medicine['scheduled_time']))}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            const SizedBox(height: 4),
+                            if ((medicine['dosage'] as String).isNotEmpty)
+                              Text(
+                                'Dosagem: ${medicine['dosage']}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
                           ],
                         ),
-                      if ((medicine['dosage'] as String).isNotEmpty)
-                        Text(
-                          'Dosagem: ${medicine['dosage']}',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ),
-                      if ((medicine['instructions'] as String).isNotEmpty)
-                        Text(
-                          'Instruções: ${medicine['instructions']}',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ),
-                    ],
-                  ),
-                  trailing: CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () {
-                      showCupertinoModalPopup(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return CupertinoActionSheet(
-                            title: Text(medicine['name']),
-                            message: const Text('Escolha uma opção'),
-                            actions: [
-                              CupertinoActionSheetAction(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _editMedicine(
-                                    medicine['key'],
-                                    medicinesMap[medicine['key']]
-                                        as Map<dynamic, dynamic>,
-                                  );
-                                },
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(CupertinoIcons.pencil),
-                                    SizedBox(width: 8),
-                                    Text('Editar'),
-                                  ],
+                      ),
+                      // Right side options button
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          showCupertinoModalPopup(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return CupertinoActionSheet(
+                                title: Text(medicine['name']),
+                                message: const Text('Escolha uma opção'),
+                                actions: [
+                                  CupertinoActionSheetAction(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _editMedicine(
+                                        medicine['key'],
+                                        medicinesMap[medicine['key']]
+                                            as Map<dynamic, dynamic>,
+                                      );
+                                    },
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(CupertinoIcons.pencil),
+                                        SizedBox(width: 8),
+                                        Text('Editar'),
+                                      ],
+                                    ),
+                                  ),
+                                  CupertinoActionSheetAction(
+                                    isDestructiveAction: true,
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _showDeleteConfirmation(medicine['key']);
+                                    },
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(CupertinoIcons.delete),
+                                        SizedBox(width: 8),
+                                        Text('Excluir'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                cancelButton: CupertinoActionSheetAction(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancelar'),
                                 ),
-                              ),
-                              CupertinoActionSheetAction(
-                                isDestructiveAction: true,
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _showDeleteConfirmation(medicine['key']);
-                                },
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(CupertinoIcons.delete),
-                                    SizedBox(width: 8),
-                                    Text('Excluir'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            cancelButton: CupertinoActionSheetAction(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancelar'),
-                            ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                    child: const Icon(
-                      CupertinoIcons.ellipsis,
-                      color: CupertinoColors.systemGrey,
-                    ),
+                        child: const Icon(
+                          CupertinoIcons.ellipsis,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddMedicineDialog,
+        backgroundColor: CupertinoColors.systemBlue,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15), // Rounded corners for FAB
+        ),
+        child: const Icon(CupertinoIcons.plus),
       ),
     );
   }
