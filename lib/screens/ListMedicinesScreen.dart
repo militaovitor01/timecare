@@ -45,9 +45,17 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
         _isLoading = false;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar dados: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
     }
   }
 
@@ -56,12 +64,28 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
       await _remedioDao.deletar(remedio);
       await _carregarDados();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remédio excluído com sucesso!')),
+        SnackBar(
+          content: Text('Remédio excluído com sucesso!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao excluir remédio: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao excluir remédio: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
     }
   }
 
@@ -203,7 +227,12 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Erro ao limpar dados: $e'),
-                              backgroundColor: Colors.red,
+                              backgroundColor: Colors.redAccent,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              margin: const EdgeInsets.all(16),
                             ),
                           );
                         }
@@ -230,6 +259,8 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                         itemCount: _remedios.length,
                         itemBuilder: (context, index) {
                           final remedio = _remedios[index];
+                          final bool isTaken = index == 0;
+
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(16),
@@ -247,6 +278,28 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor:
+                                        isTaken
+                                            ? Colors.green
+                                            : Colors.redAccent.withOpacity(0.2),
+                                    child:
+                                        isTaken
+                                            ? const Icon(
+                                              Icons.check,
+                                              size: 20,
+                                              color: Colors.white,
+                                            )
+                                            : const Icon(
+                                              Icons.circle,
+                                              size: 20,
+                                              color: Colors.redAccent,
+                                            ),
+                                  ),
+                                ),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -295,77 +348,116 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
                                     ],
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit,
-                                        color: Colors.blueAccent,
-                                      ),
-                                      onPressed: () async {
-                                        final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) => EditMedicineScreen(
-                                                  id: remedio.id,
-                                                  nome: remedio.nome,
-                                                  tipo: remedio.tipo,
-                                                  horario: remedio.horario,
-                                                  dosagem: remedio.dosagem,
-                                                  frequencia:
-                                                      remedio.frequencia,
+                                IconButton(
+                                  icon: const Icon(Icons.more_vert),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return SafeArea(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: <Widget>[
+                                              ListTile(
+                                                leading: const Icon(
+                                                  Icons.edit,
+                                                  color: Colors.blueAccent,
                                                 ),
+                                                title: const Text(
+                                                  'Editar',
+                                                  style: TextStyle(
+                                                    color: Colors.blueAccent,
+                                                  ),
+                                                ),
+                                                onTap: () async {
+                                                  Navigator.pop(
+                                                    context,
+                                                  ); // Close the bottom sheet
+                                                  final result = await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (
+                                                            context,
+                                                          ) => EditMedicineScreen(
+                                                            id: remedio.id,
+                                                            nome: remedio.nome,
+                                                            tipo: remedio.tipo,
+                                                            horario:
+                                                                remedio.horario,
+                                                            dosagem:
+                                                                remedio.dosagem,
+                                                            frequencia:
+                                                                remedio
+                                                                    .frequencia,
+                                                          ),
+                                                    ),
+                                                  );
+                                                  if (result != null) {
+                                                    await _carregarDados();
+                                                  }
+                                                },
+                                              ),
+                                              ListTile(
+                                                leading: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.redAccent,
+                                                ),
+                                                title: const Text(
+                                                  'Excluir',
+                                                  style: TextStyle(
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                ),
+                                                onTap: () {
+                                                  Navigator.pop(
+                                                    context,
+                                                  ); // Close the bottom sheet
+                                                  showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (ctx) => AlertDialog(
+                                                          title: const Text(
+                                                            'Confirmar exclusão',
+                                                          ),
+                                                          content: Text(
+                                                            'Deseja excluir o remédio "${remedio.nome}"?',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed:
+                                                                  () =>
+                                                                      Navigator.of(
+                                                                        ctx,
+                                                                      ).pop(),
+                                                              child: const Text(
+                                                                'Cancelar',
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                  ctx,
+                                                                ).pop();
+                                                                _excluirRemedio(
+                                                                  remedio,
+                                                                );
+                                                              },
+                                                              child: const Text(
+                                                                'Excluir',
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
                                           ),
                                         );
-
-                                        if (result != null) {
-                                          await _carregarDados();
-                                        }
                                       },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.redAccent,
-                                      ),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder:
-                                              (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  'Confirmar exclusão',
-                                                ),
-                                                content: Text(
-                                                  'Deseja excluir o remédio "${remedio.nome}"?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed:
-                                                        () =>
-                                                            Navigator.of(
-                                                              ctx,
-                                                            ).pop(),
-                                                    child: const Text(
-                                                      'Cancelar',
-                                                    ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.of(ctx).pop();
-                                                      _excluirRemedio(remedio);
-                                                    },
-                                                    child: const Text(
-                                                      'Excluir',
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -387,6 +479,18 @@ class _ListMedicinesScreenState extends State<ListMedicinesScreen> {
 
           if (result != null) {
             await _carregarDados();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Remédio adicionado com sucesso!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
           }
         },
       ),
