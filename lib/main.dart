@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:timecare/screens/analysis_screen.dart';
-import 'package:timecare/screens/ListMedicinesScreen.dart';
 import 'package:timecare/screens/ProfileScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:timecare/firebase_options.dart';
