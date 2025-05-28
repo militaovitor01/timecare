@@ -566,7 +566,6 @@ class _MedicineScreenState extends State<MedicineScreen> {
                         ],
                       ),
                       const Spacer(),
-                     
                     ],
                   );
                 },
