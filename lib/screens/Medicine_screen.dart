@@ -503,72 +503,56 @@ class _MedicineScreenState extends State<MedicineScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // StreamBuilder for user data
-              StreamBuilder<DatabaseEvent>(
-                stream: _userRef.onValue,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Text(
-                      'Erro: ${snapshot.error}',
-                      style: TextStyle(color: CupertinoColors.systemRed),
-                    );
-                  }
-
-                  if (!snapshot.hasData) {
-                    return const CupertinoActivityIndicator(); // Loading indicator while fetching user data
-                  }
-
-                  // Extract user data
-                  final userData =
-                      snapshot.data!.snapshot.value as Map<dynamic, dynamic>?;
-                  final userName =
-                      userData?['name'] ??
-                      'Nome do Usuário'; // Assuming name is stored under 'nome'
-
-                  return Row(
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey4,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.person,
+                      color: CupertinoColors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color:
-                              CupertinoColors
-                                  .systemBlue, // Changed color to a primary blue
-                          borderRadius: BorderRadius.circular(
-                            20,
-                          ), // Keep it circular
-                        ),
-                        child: const Icon(
-                          CupertinoIcons.person,
-                          color: Colors.white, // Keep icon color white
+                      Text(
+                        '13',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            userName, // Display fetched user name
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Text(
-                            (userData?['idade'] ?? 13)
-                                .toString(), // Convert int to String
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: CupertinoColors.systemGrey,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        '25 anos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: CupertinoColors.systemGrey,
+                        ),
                       ),
-                      const Spacer(),
                     ],
-                  );
-                },
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemRed.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.person_fill,
+                      color: CupertinoColors.systemRed,
+                      size: 20,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Row(
