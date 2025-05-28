@@ -24,10 +24,7 @@ class MyApp extends StatelessWidget {
       title: 'Relatório Diário',
       theme: ThemeData(fontFamily: GoogleFonts.poppins().fontFamily),
       initialRoute: '/',
-      routes: {
-        '/': (context) => const HomeScreen(),
-        
-      },
+      routes: {'/': (context) => const HomeScreen()},
     );
   }
 }
@@ -66,10 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
             selected = index;
           });
         },
-        children: const [
-          MedicineScreen(),
-          AnalysisScreen(),
-        ],
+        children: const [MedicineScreen(), AnalysisScreen(), ProfileScreen()],
       ),
       bottomNavigationBar: StylishBottomBar(
         option: AnimatedBarOptions(
@@ -104,4 +98,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

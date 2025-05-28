@@ -11,9 +11,9 @@ class AnalysisScreen extends StatefulWidget {
 
 class _AnalysisScreenState extends State<AnalysisScreen> {
   // Constants for the daily report
-  static const int total_remedios = 14;
-  static const int remedios_atrasados = 0;
-  static const int remedios_naotomados = 0;
+  static const int total_remedios = 12;
+  static const int remedios_atrasados = 1;
+  static const int remedios_naotomados = 2;
 
   int get remedios_corretos =>
       total_remedios - remedios_naotomados - remedios_atrasados;
@@ -56,7 +56,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       backgroundColor: CupertinoColors.systemGroupedBackground,
       appBar: AppBar(
         title: const Text('Análises'),
-        backgroundColor: CupertinoColors.systemGroupedBackground,
+        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
