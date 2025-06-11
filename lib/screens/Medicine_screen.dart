@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:timecare/notification_service.dart'; // Import do serviço de notificações
 
 class MedicineScreen extends StatefulWidget {
   const MedicineScreen({super.key});
@@ -22,6 +23,13 @@ class _MedicineScreenState extends State<MedicineScreen> {
   TimeOfDay? _selectedTime;
 
   final DatabaseReference _userRef = FirebaseDatabase.instance.ref('user_test');
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar o serviço de notificações
+    NotificationService().init();
+  }
 
   @override
   void dispose() {
@@ -65,6 +73,44 @@ class _MedicineScreenState extends State<MedicineScreen> {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
     return dt.toUtc().toIso8601String(); // Format as ISO 8601 UTC string
+  }
+
+  // Função para agendar notificação
+  Future<void> _scheduleNotification(
+    String medicineKey,
+    String medicineName,
+    String dosage,
+    TimeOfDay scheduledTime,
+  ) async {
+    DateTime horario = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+
+    // Se o horário já passou hoje, agende para amanhã
+    if (horario.isBefore(DateTime.now())) {
+      horario = horario.add(Duration(days: 1));
+    }
+
+    // Usar o hash do medicineKey como ID único para a notificação
+    int notificationId = medicineKey.hashCode;
+
+    await NotificationService().scheduleNotification(
+      id: notificationId,
+      title: 'Hora de tomar $medicineName',
+      body: 'Dosagem: $dosage',
+      scheduledTime: horario,
+      payload: medicineName,
+    );
+  }
+
+  // Função para cancelar notificação
+  Future<void> _cancelNotification(String medicineKey) async {
+    int notificationId = medicineKey.hashCode;
+    await NotificationService().cancelNotification(notificationId);
   }
 
   void _showModernNotification(
@@ -148,7 +194,9 @@ class _MedicineScreenState extends State<MedicineScreen> {
     }
 
     try {
-      await _databaseRef.push().set({
+      // Adicionar medicamento ao Firebase
+      DatabaseReference newMedicineRef = await _databaseRef.push();
+      await newMedicineRef.set({
         'name': _nameController.text,
         'dosage': _dosageController.text,
         'scheduled_time': _formatTimeOfDayAsIso8601(
@@ -156,9 +204,15 @@ class _MedicineScreenState extends State<MedicineScreen> {
         ), // Format selected time
         'instructions': _instructionsController.text,
         'status': 'on-time', // Default status
-        // 'createdAt': ServerValue.timestamp, // Removed as per new structure
-        // 'bit': false, // Removed as per new structure
       });
+
+      // Agendar notificação
+      await _scheduleNotification(
+        newMedicineRef.key!,
+        _nameController.text,
+        _dosageController.text,
+        _selectedTime!,
+      );
 
       _nameController.clear();
       _timeController.clear();
@@ -177,7 +231,12 @@ class _MedicineScreenState extends State<MedicineScreen> {
 
   Future<void> _deleteMedicine(String key) async {
     try {
+      // Cancelar notificação antes de deletar
+      await _cancelNotification(key);
+
+      // Deletar medicamento do Firebase
       await _databaseRef.child(key).remove();
+
       if (!mounted) return;
       _showModernNotification(context, 'Medicamento removido com sucesso');
     } catch (e) {
@@ -272,7 +331,10 @@ class _MedicineScreenState extends State<MedicineScreen> {
             CupertinoActionSheetAction(
               onPressed: () async {
                 try {
-                  // Only update name and scheduled_time for now
+                  // Cancelar notificação antiga
+                  await _cancelNotification(key);
+
+                  // Atualizar medicamento no Firebase
                   await _databaseRef.child(key).update({
                     'name': _nameController.text,
                     'dosage': _dosageController.text,
@@ -281,13 +343,24 @@ class _MedicineScreenState extends State<MedicineScreen> {
                             ? _formatTimeOfDayAsIso8601(_selectedTime!)
                             : '',
                     'instructions': _instructionsController.text,
-                    // status is not updated here
                   });
+
+                  // Agendar nova notificação se houver horário
+                  if (_selectedTime != null) {
+                    await _scheduleNotification(
+                      key,
+                      _nameController.text,
+                      _dosageController.text,
+                      _selectedTime!,
+                    );
+                  }
+
                   _nameController.clear();
                   _timeController.clear();
                   _dosageController.clear();
                   _instructionsController.clear();
                   _selectedTime = null;
+
                   if (!mounted) return;
                   Navigator.of(context, rootNavigator: true).pop();
                   _showModernNotification(
@@ -360,8 +433,9 @@ class _MedicineScreenState extends State<MedicineScreen> {
         final Map<dynamic, dynamic> medicinesMap =
             snapshot.value as Map<dynamic, dynamic>;
 
-        // Iterate through each medicine entry and delete it individually
+        // Iterate through each medicine entry and cancel notifications, then delete
         for (final key in medicinesMap.keys) {
+          await _cancelNotification(key);
           await _databaseRef.child(key).remove();
         }
 
@@ -660,8 +734,6 @@ class _MedicineScreenState extends State<MedicineScreen> {
                   'status':
                       entry.value['status'] ??
                       'unknown', // Default status if not present
-                  // 'time': entry.value['time'] ?? '', // Removed old field
-                  // 'bit': entry.value['bit'] ?? false, // Removed old field
                 };
               }).toList();
 
@@ -676,7 +748,7 @@ class _MedicineScreenState extends State<MedicineScreen> {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: medicinesList.length, // Removed the +1
+            itemCount: medicinesList.length,
             itemBuilder: (context, index) {
               final medicine = medicinesList[index];
               // Use a custom Card structure instead of ListTile for better control
@@ -731,16 +803,9 @@ class _MedicineScreenState extends State<MedicineScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            // Displaying "Tipo" (assuming it's the 'instructions' field or similar,
-                            // or maybe it's a hardcoded value in the image?)
-                            // Based on OCR, "Tipo" has values like 321 and 132.
-                            // Let's use the 'instructions' field for "Tipo" for now, as 'dosage' is
-                            // already displayed as "Dosagem". If 'instructions' is empty, maybe
-                            // display 'dosage' under "Tipo"? Or add a new field to the data?
-                            // For now, let's assume 'instructions' is "Tipo".
                             if ((medicine['instructions'] as String).isNotEmpty)
                               Text(
-                                'Tipo: ${medicine['instructions']}', // Assuming 'instructions' is 'Tipo'
+                                'Tipo: ${medicine['instructions']}',
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: CupertinoColors.systemGrey,
